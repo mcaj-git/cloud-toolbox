@@ -1,5 +1,6 @@
 ######################################################### TOOLCHAIN VERSIONING #########################################
 #settings values here to be able to use dockerhub autobuild
+# syntax=docker/dockerfile:1.2
 ARG UBUNTU_VERSION=20.04
 
 ARG DOCKER_VERSION="20.10.8"
@@ -22,7 +23,7 @@ ARG STERN_VERSION="1.20.1"
 ARG SENTINEL_VERSION="0.18.4"
 
 ARG ZSH_VERSION="5.8-3ubuntu1"
-ARG MULTISTAGE_BUILDER_VERSION="2020-12-07"
+ARG MULTISTAGE_BUILDER_VERSION="2021-09-24"
 
 ######################################################### BUILDER ######################################################
 FROM insecurit/multistage-builder:$MULTISTAGE_BUILDER_VERSION as builder
@@ -45,15 +46,15 @@ ARG SENTINEL_VERSION
 
 #download oc-cli
 WORKDIR /root/download
-RUN mkdir -p oc_cli && \
+RUN set -o pipefail && mkdir -p oc_cli && \
     curl -SsL --retry 5 -o oc_cli.tar.gz https://mirror.openshift.com/pub/openshift-v4/clients/oc/$OC_CLI_VERSION/linux/oc.tar.gz && \
     tar xzvf oc_cli.tar.gz -C oc_cli
 
 #download helm-cli
-RUN mkdir helm2 && curl -SsL --retry 5 "https://get.helm.sh/helm-v$HELM2_VERSION-linux-amd64.tar.gz" | tar xz -C ./helm2
+RUN set -o pipefail && mkdir helm2 && curl -SsL --retry 5 "https://get.helm.sh/helm-v$HELM2_VERSION-linux-amd64.tar.gz" | tar xz -C ./helm2
 
 #download helm3-cli
-RUN mkdir helm && curl -SsL --retry 5 "https://get.helm.sh/helm-v$HELM_VERSION-linux-amd64.tar.gz" | tar xz -C ./helm
+RUN set -o pipefail && mkdir helm && curl -SsL --retry 5 "https://get.helm.sh/helm-v$HELM_VERSION-linux-amd64.tar.gz" | tar xz -C ./helm
 
 #download terraform 0.14
 RUN set -o pipefail && wget https://releases.hashicorp.com/terraform/${TERRAFORM14_VERSION}/terraform\_${TERRAFORM14_VERSION}\_linux_amd64.zip && \
@@ -65,7 +66,7 @@ RUN set -o pipefail && wget https://releases.hashicorp.com/terraform/${TERRAFORM
 
 #download docker
 #credits to https://github.com/docker-library/docker/blob/463595652d2367887b1ffe95ec30caa00179be72/18.09/Dockerfile
-RUN mkdir -p /root/download/docker/bin && \
+RUN set -o pipefail && mkdir -p /root/download/docker/bin && \
     set -eux; \
     arch="$(uname -m)"; \
     if ! wget -O docker.tgz "https://download.docker.com/linux/static/stable/${arch}/docker-${DOCKER_VERSION}.tgz"; then \
@@ -81,14 +82,14 @@ RUN mkdir -p /root/download/docker/bin && \
 RUN set -o pipefail && wget https://storage.googleapis.com/kubernetes-release/release/v$KUBECTL_VERSION/bin/linux/amd64/kubectl -O /root/download/kubectl
 
 #download crictl
-RUN mkdir -p /root/download/crictl && \
+RUN set -o pipefail && mkdir -p /root/download/crictl && \
     wget "https://github.com/kubernetes-sigs/cri-tools/releases/download/v$CRICTL_VERSION/crictl-v$CRICTL_VERSION-linux-amd64.tar.gz" -O /root/download/crictl.tar.gz && \
     tar zxvf /root/download/crictl.tar.gz -C /root/download/crictl  && \
     chmod +x /root/download/crictl/crictl
 
 
 #download yq
-RUN curl -Lo yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+RUN set -o pipefail && curl -Lo yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
 
 #download vault
 RUN set -o pipefail && wget https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip && \
@@ -96,10 +97,10 @@ RUN set -o pipefail && wget https://releases.hashicorp.com/vault/${VAULT_VERSION
 
 #download tcpping
 #todo: switch to https://github.com/deajan/tcpping/blob/master/tcpping when ubuntu is supported
-RUN set -o pipefail && wget https://raw.githubusercontent.com/deajan/tcpping/original-1.8/tcpping -O /root/download/tcpping
+# RUN wget https://raw.githubusercontent.com/deajan/tcpping/original-1.8/tcpping -O /root/download/tcpping
 
 #download stern
-RUN mkdir -p /root/download/stern && \
+RUN set -o pipefail && mkdir -p /root/download/stern && \
     wget https://github.com/stern/stern/releases/download/v${STERN_VERSION}/stern_${STERN_VERSION}_linux_amd64.tar.gz -O /root/download/stern_arch.tar.gz && \
     tar zxvf /root/download/stern_arch.tar.gz -C /root/download/stern && \
     mkdir -p /root/download/stern_binary && \
@@ -112,7 +113,7 @@ RUN set -o pipefail && wget https://github.com/vmware-tanzu/velero/releases/down
    mv velero-v${VELERO_VERSION}-linux-amd64/velero /root/download/velero_binary/velero
 
 #download terraform sentinel
-RUN curl https://releases.hashicorp.com/sentinel/${SENTINEL_VERSION}/sentinel_${SENTINEL_VERSION}_linux_amd64.zip --output ./sentinel.zip && \
+RUN set -o pipefail && curl https://releases.hashicorp.com/sentinel/${SENTINEL_VERSION}/sentinel_${SENTINEL_VERSION}_linux_amd64.zip --output ./sentinel.zip && \
   unzip ./sentinel.zip -d ./sentinel_binary
 
 
@@ -142,7 +143,7 @@ WORKDIR /root
 #https://github.com/waleedka/modern-deep-learning-docker/issues/4#issue-292539892
 #bc and tcptraceroute needed for tcping
 RUN apt-get update && \
-    apt-get install -y \
+    apt-get install -y --no-install-recommends \
     apt-utils \
     apt-transport-https \
     bash-completion \
@@ -187,9 +188,11 @@ RUN apt-get update && \
 #install zsh
 RUN locale-gen en_US.UTF-8
 RUN apt-get update && \
-    apt-get install -y \
+    apt-get install -y --no-install-recommends  \
     fonts-powerline \
-    powerline \
+    powerline && \
+    rm -rf /var/lib/apt/lists/* && \
+    rm -rf /var/cache/apt/archives/* \
     zsh=$ZSH_VERSION
 
 ENV TERM xterm
@@ -233,7 +236,8 @@ RUN pip3 install awscli==$AWS_CLI_VERSION --upgrade && \
 
 
 #install azure cli
-#Ubuntu 20.04 (Focal Fossa), includes an azure-cli package with version 2.0.81 provided by the focal/universe repository. This package is outdated and and not recommended. If this package is installed, remove the package before continuing by running the command sudo apt remove azure-cli -y && sudo apt autoremove -y.
+#Ubuntu 20.04 (Focal Fossa), includes an azure-cli package with version 2.0.81 provided by the focal/universe repository. This package is outdated and and not recommended. If this package is installed, remove the package before continuing by
+#RUNning the command sudo apt remove azure-cli -y && sudo apt autoremove -y.
 RUN apt remove azure-cli -y && apt autoremove -y && \
     curl -sL https://packages.microsoft.com/keys/microsoft.asc | \
     gpg --dearmor | \
@@ -242,7 +246,7 @@ RUN apt remove azure-cli -y && apt autoremove -y && \
     echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $AZ_REPO main" | \
     tee /etc/apt/sources.list.d/azure-cli.list && \
     apt-get update && \
-    apt-get install -y azure-cli=$AZ_CLI_VERSION && \
+    apt-get install -y --no-install-recommends  azure-cli=$AZ_CLI_VERSION && \
     az --version && \
     az extension add --name azure-devops
 
@@ -250,7 +254,7 @@ RUN apt remove azure-cli -y && apt autoremove -y && \
 RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && \
     curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add - && \
     apt-get update && \
-    apt-get install -y \
+    apt-get install -y --no-install-recommends  \
     google-cloud-sdk=${GCLOUD_VERSION}
 
 #install binaries
@@ -264,7 +268,7 @@ COPY --from=builder "/root/download/kubectl" "/usr/local/bin/kubectl"
 COPY --from=builder "/root/download/crictl/crictl" "/usr/local/bin/crictl"
 COPY --from=builder "/root/download/yq" "/usr/local/bin/yq"
 COPY --from=builder "/root/download/vault" "/usr/local/bin/vault"
-COPY --from=builder "/root/download/tcpping" "/usr/local/bin/tcpping"
+# COPY --from=builder "/root/download/tcpping" "/usr/local/bin/tcpping"
 COPY --from=builder "/root/download/velero_binary/velero" "/usr/local/bin/velero"
 COPY --from=builder "/root/download/stern_binary/stern" "/usr/local/bin/stern"
 COPY --from=builder "/root/download/sentinel_binary/sentinel" "/usr/local/bin/sentinel"
@@ -285,7 +289,7 @@ RUN chmod -R +x /usr/local/bin && \
     yq --version && \
     vault -version && \
     gcloud version && \
-    tcpping && \
+#    tcpping && \
     velero --help && \
     stern --version && \
     sentinel --version
