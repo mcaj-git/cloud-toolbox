@@ -25,8 +25,8 @@ ARG ZSH_VERSION="5.8-3ubuntu1"
 ARG MULTISTAGE_BUILDER_VERSION="2020-12-07"
 
 ######################################################### BUILDER ######################################################
-FROM ksandermann/multistage-builder:$MULTISTAGE_BUILDER_VERSION as builder
-MAINTAINER Kevin Sandermann <kevin.sandermann@gmail.com>
+FROM insecurit/multistage-builder:$MULTISTAGE_BUILDER_VERSION as builder
+## MAINTAINER Kevin Sandermann <kevin.sandermann@gmail.com>
 LABEL maintainer="kevin.sandermann@gmail.com"
 
 ARG OC_CLI_VERSION
@@ -56,11 +56,11 @@ RUN mkdir helm2 && curl -SsL --retry 5 "https://get.helm.sh/helm-v$HELM2_VERSION
 RUN mkdir helm && curl -SsL --retry 5 "https://get.helm.sh/helm-v$HELM_VERSION-linux-amd64.tar.gz" | tar xz -C ./helm
 
 #download terraform 0.14
-RUN wget https://releases.hashicorp.com/terraform/${TERRAFORM14_VERSION}/terraform\_${TERRAFORM14_VERSION}\_linux_amd64.zip && \
+RUN set -o pipefail && wget https://releases.hashicorp.com/terraform/${TERRAFORM14_VERSION}/terraform\_${TERRAFORM14_VERSION}\_linux_amd64.zip && \
     unzip ./terraform\_${TERRAFORM14_VERSION}\_linux_amd64.zip -d terraform14_cli
 
 #download terraform
-RUN wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform\_${TERRAFORM_VERSION}\_linux_amd64.zip && \
+RUN set -o pipefail && wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform\_${TERRAFORM_VERSION}\_linux_amd64.zip && \
     unzip ./terraform\_${TERRAFORM_VERSION}\_linux_amd64.zip -d terraform_cli
 
 #download docker
@@ -78,7 +78,7 @@ RUN mkdir -p /root/download/docker/bin && \
         --directory /root/download/docker/bin
 
 #download kubectl
-RUN wget https://storage.googleapis.com/kubernetes-release/release/v$KUBECTL_VERSION/bin/linux/amd64/kubectl -O /root/download/kubectl
+RUN set -o pipefail && wget https://storage.googleapis.com/kubernetes-release/release/v$KUBECTL_VERSION/bin/linux/amd64/kubectl -O /root/download/kubectl
 
 #download crictl
 RUN mkdir -p /root/download/crictl && \
@@ -91,12 +91,12 @@ RUN mkdir -p /root/download/crictl && \
 RUN curl -Lo yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
 
 #download vault
-RUN wget https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip && \
+RUN set -o pipefail && wget https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip && \
     unzip ./vault_${VAULT_VERSION}_linux_amd64.zip
 
 #download tcpping
 #todo: switch to https://github.com/deajan/tcpping/blob/master/tcpping when ubuntu is supported
-RUN wget https://raw.githubusercontent.com/deajan/tcpping/original-1.8/tcpping -O /root/download/tcpping
+RUN set -o pipefail && wget https://raw.githubusercontent.com/deajan/tcpping/original-1.8/tcpping -O /root/download/tcpping
 
 #download stern
 RUN mkdir -p /root/download/stern && \
@@ -106,7 +106,7 @@ RUN mkdir -p /root/download/stern && \
     mv /root/download/stern/stern_${STERN_VERSION}_linux_amd64/stern /root/download/stern_binary/stern
 
 #download velero CLI
-RUN wget https://github.com/vmware-tanzu/velero/releases/download/v${VELERO_VERSION}/velero-v${VELERO_VERSION}-linux-amd64.tar.gz && \
+RUN set -o pipefail && wget https://github.com/vmware-tanzu/velero/releases/download/v${VELERO_VERSION}/velero-v${VELERO_VERSION}-linux-amd64.tar.gz && \
    tar -xvf velero-v${VELERO_VERSION}-linux-amd64.tar.gz && \
    mkdir -p /root/download/velero_binary && \
    mv velero-v${VELERO_VERSION}-linux-amd64/velero /root/download/velero_binary/velero
@@ -119,7 +119,7 @@ RUN curl https://releases.hashicorp.com/sentinel/${SENTINEL_VERSION}/sentinel_${
 ######################################################### IMAGE ########################################################
 
 FROM ubuntu:$UBUNTU_VERSION
-MAINTAINER Kevin Sandermann <kevin.sandermann@gmail.com>
+## MAINTAINER Kevin Sandermann <kevin.sandermann@gmail.com>
 LABEL maintainer="kevin.sandermann@gmail.com"
 
 # tooling versions
@@ -142,8 +142,6 @@ WORKDIR /root
 #https://github.com/waleedka/modern-deep-learning-docker/issues/4#issue-292539892
 #bc and tcptraceroute needed for tcping
 RUN apt-get update && \
-    apt-get dist-upgrade -y && \
-    apt-get upgrade -y && \
     apt-get install -y \
     apt-utils \
     apt-transport-https \
@@ -182,10 +180,7 @@ RUN apt-get update && \
     vim \
     wget \
     zip \
-    zlib1g-dev &&\
-    apt-get clean -y && \
-    apt-get autoclean -y && \
-    apt-get autoremove -y && \
+    zlib1g-dev && \
     rm -rf /var/lib/apt/lists/* && \
     rm -rf /var/cache/apt/archives/*
 
@@ -199,13 +194,13 @@ RUN apt-get update && \
 
 ENV TERM xterm
 ENV ZSH_THEME agnoster
-RUN wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -O - | zsh || true
+RUN set -o pipefail && wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -O - | zsh || true
 
 #keep standard shell for automation usecases
 #RUN chsh -s /bin/zsh
 
 #install OpenSSH
-RUN wget "https://mirror.exonetric.net/pub/OpenBSD/OpenSSH/portable/openssh-${OPENSSH_VERSION}.tar.gz" --no-check-certificate && \
+RUN set -o pipefail && wget "https://mirror.exonetric.net/pub/OpenBSD/OpenSSH/portable/openssh-${OPENSSH_VERSION}.tar.gz" --no-check-certificate && \
     tar xfz openssh-${OPENSSH_VERSION}.tar.gz && \
     cd openssh-${OPENSSH_VERSION} && \
     ./configure && \
@@ -298,5 +293,5 @@ RUN chmod -R +x /usr/local/bin && \
 COPY .bashrc /root/.bashrc
 COPY .zshrc /root/.zshrc
 
-WORKDIR /root/project
+WORKDIR /root/dev
 CMD ["/bin/bash"]

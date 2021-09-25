@@ -26,7 +26,7 @@ unset TILLER_NAMESPACE
 
 ######################################################## SET USER-SPECIFIC ENV #########################################
 
-export MAKEFILE_REPO=/root/project/dev/github/makefiles
+export MAKEFILE_REPO=/root/dev/dev/github/makefiles
 
 ######################################################## DONE ##########################################################
 echo "$( cd "$(dirname "$0")" ; pwd -P )/.autoexec.sh loaded successfully!"

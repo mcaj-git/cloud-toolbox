@@ -2,22 +2,22 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-IMAGE_TAG="2021-09-23_01"
+IMAGE_TAG="2021-09-24_01"
 UPSTREAM_TAG="latest"
-UPSTREAM_TAG2="project"
+UPSTREAM_TAG2="dev"
 
 docker build \
     --pull \
     --no-cache \
-    -t ksandermann/cloud-toolbox:$IMAGE_TAG \
+    -t insecurit/cloud-toolbox:$IMAGE_TAG \
     .
 
 #push
 docker login
-docker push ksandermann/cloud-toolbox:$IMAGE_TAG
+docker push insecurit/cloud-toolbox:$IMAGE_TAG
 
-docker tag ksandermann/cloud-toolbox:$IMAGE_TAG ksandermann/cloud-toolbox:$UPSTREAM_TAG
-docker push ksandermann/cloud-toolbox:$UPSTREAM_TAG
+docker tag insecurit/cloud-toolbox:$IMAGE_TAG insecurit/cloud-toolbox:$UPSTREAM_TAG
+docker push insecurit/cloud-toolbox:$UPSTREAM_TAG
 
-docker tag ksandermann/cloud-toolbox:$IMAGE_TAG ksandermann/cloud-toolbox:$UPSTREAM_TAG2
-docker push ksandermann/cloud-toolbox:$UPSTREAM_TAG2
+docker tag insecurit/cloud-toolbox:$IMAGE_TAG insecurit/cloud-toolbox:$UPSTREAM_TAG2
+docker push insecurit/cloud-toolbox:$UPSTREAM_TAG2

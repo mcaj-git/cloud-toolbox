@@ -7,13 +7,13 @@ TOOLBOX_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 
 #functions
 function startNewToolbox {
-  docker pull ksandermann/cloud-toolbox:$IMAGE_TAG
+  docker pull insecurit/cloud-toolbox:$IMAGE_TAG
   docker run -ti --rm \
     --name toolbox \
     -v ~/.kube:/root/.kube \
     -v ~/.helm:/root/.helm \
     -v ~/.ssh:/root/.ssh \
-    -v ${PWD}:/root/project \
+    -v ${PWD}:/root/dev \
     -v ~/.gitconfig:/root/.gitconfig \
     -v $TOOLBOX_DIR/.autoexec.sh:/root/.autoexec.sh \
     -v ~/.aws:/root/.aws \
@@ -22,7 +22,7 @@ function startNewToolbox {
     -v ~/ca-certificates:/usr/local/share/ca-certificates/extra \
     -v /var/run/docker.sock:/var/run/docker.sock \
     --env-file <(env | grep -i proxy) \
-    ksandermann/cloud-toolbox:$IMAGE_TAG \
+    insecurit/cloud-toolbox:$IMAGE_TAG \
     /bin/zsh
 }
 
