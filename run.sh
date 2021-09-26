@@ -2,7 +2,7 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-IMAGE_TAG="latest"
+IMAGE_TAG="2021-09-24"
 TOOLBOX_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 
 #functions
